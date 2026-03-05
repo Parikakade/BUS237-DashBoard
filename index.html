@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Command Center | ABC Logistics</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #38bdf8;
+            text-decoration: none;
+        }
+
+        .nav-brand span {
+            color: #e2e8f0;
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: #e2e8f0;
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .nav-links a.active {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.15);
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(56, 189, 248, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title .icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(56, 189, 248, 0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #475569;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+            color: #0f172a;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            width: 100%;
+            margin-top: 0.75rem;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-toggle {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(139, 92, 246, 0.25);
+        }
+
+        /* Error message */
+        .error-msg {
+            color: #f87171;
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+            min-height: 1.2em;
+        }
+
+        /* Inventory Table */
+        .inventory-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .inventory-list::-webkit-scrollbar { width: 6px; }
+        .inventory-list::-webkit-scrollbar-track { background: transparent; }
+        .inventory-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+            position: sticky;
+            top: 0;
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        tbody td {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        tbody tr:hover {
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        /* Chart area */
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(56, 189, 248, 0.1);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .stats-bar { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="index.html" class="nav-brand">
+            &#x1F4E6; ABC <span>Logistics</span>
+        </a>
+        <div class="nav-links">
+            <a href="index.html" class="active">Dashboard</a>
+            <a href="about.html">Developer Profile</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Inventory Command Center</h1>
+            <p>Real-time warehouse inventory tracking for ABC Logistics</p>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-value" id="totalItems">0</div>
+                <div class="stat-label">Unique Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalQuantity">0</div>
+                <div class="stat-label">Total Units</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lastUpdated">--</div>
+                <div class="stat-label">Last Updated</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+
+            <!-- Left Column: Form + Inventory List -->
+            <div>
+                <!-- Add Item Card -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-title">
+                        <div class="icon">+</div>
+                        Add New Item
+                    </div>
+                    <div class="form-group">
+                        <label for="itemName">Item Name</label>
+                        <input type="text" id="itemName" placeholder="e.g. Wireless Mouse">
+                        <div class="error-msg" id="nameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemQty">Quantity</label>
+                        <input type="number" id="itemQty" placeholder="e.g. 50" min="0" step="1">
+                        <div class="error-msg" id="qtyError"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addItem()">Add to Inventory</button>
+                    <button class="btn btn-danger" onclick="clearAll()">Clear All Items</button>
+                </div>
+
+                <!-- Inventory List Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <div class="icon">&#x1F4CB;</div>
+                        Current Inventory
+                    </div>
+                    <div class="inventory-list" id="inventoryList">
+                        <div class="empty-state">No items yet. Add your first item above.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Chart -->
+            <div class="card">
+                <div class="chart-header">
+                    <div class="card-title" style="margin-bottom: 0;">
+                        <div class="icon">&#x1F4CA;</div>
+                        Inventory Visualization
+                    </div>
+                    <button class="btn btn-toggle" id="toggleBtn" onclick="toggleChart()">
+                        Switch to Pie Chart
+                    </button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="inventoryChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ========== DATA MANAGEMENT ==========
+        function getInventory() {
+            const data = localStorage.getItem('abc_inventory');
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveInventory(items) {
+            localStorage.setItem('abc_inventory', JSON.stringify(items));
+        }
+
+        // ========== VALIDATION ==========
+        function validateInputs(name, qty) {
+            let valid = true;
+            const nameErr = document.getElementById('nameError');
+            const qtyErr = document.getElementById('qtyError');
+            nameErr.textContent = '';
+            qtyErr.textContent = '';
+
+            // Name validation
+            if (!name || name.trim() === '') {
+                nameErr.textContent = 'Item name is required.';
+                valid = false;
+            }
+
+            // Check for duplicate (case-insensitive)
+            const items = getInventory();
+            const duplicate = items.find(item => item.name.toLowerCase() === name.trim().toLowerCase());
+            if (duplicate) {
+                nameErr.textContent = 'This item already exists in the inventory.';
+                valid = false;
+            }
+
+            // Quantity validation
+            const qtyInput = document.getElementById('itemQty').value;
+
+            if (qtyInput === '' || qtyInput === null) {
+                qtyErr.textContent = 'Quantity is required.';
+                valid = false;
+            } else if (isNaN(qty) || qtyInput.trim() === '') {
+                qtyErr.textContent = 'Please enter a valid number.';
+                valid = false;
+            } else if (!Number.isInteger(Number(qty)) || qtyInput.includes('.')) {
+                qtyErr.textContent = 'Quantity must be a whole number.';
+                valid = false;
+            } else if (qty < 0) {
+                qtyErr.textContent = 'Quantity cannot be negative.';
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        // ========== ADD ITEM ==========
+        function addItem() {
+            const nameInput = document.getElementById('itemName');
+            const qtyInput = document.getElementById('itemQty');
+            const name = nameInput.value.trim();
+            const qty = Number(qtyInput.value);
+
+            if (!validateInputs(name, qty)) return;
+
+            const items = getInventory();
+            items.push({ name: name, quantity: qty });
+            saveInventory(items);
+
+            nameInput.value = '';
+            qtyInput.value = '';
+            document.getElementById('nameError').textContent = '';
+            document.getElementById('qtyError').textContent = '';
+
+            renderAll();
+        }
+
+        // ========== DELETE ITEM ==========
+        function deleteItem(index) {
+            const items = getInventory();
+            items.splice(index, 1);
+            saveInventory(items);
+            renderAll();
+        }
+
+        // ========== CLEAR ALL ==========
+        function clearAll() {
+            if (getInventory().length === 0) return;
+            if (confirm('Are you sure you want to clear all items? This cannot be undone.')) {
+                localStorage.removeItem('abc_inventory');
+                renderAll();
+            }
+        }
+
+        // ========== RENDER INVENTORY LIST ==========
+        function renderList() {
+            const items = getInventory();
+            const container = document.getElementById('inventoryList');
+
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state">No items yet. Add your first item above.</div>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Item</th><th>Qty</th><th></th></tr></thead><tbody>';
+            items.forEach((item, i) => {
+                html += `<tr>
+                    <td>${escapeHtml(item.name)}</td>
+                    <td>${item.quantity}</td>
+                    <td><button class="delete-btn" onclick="deleteItem(${i})" title="Remove item">&times;</button></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ========== RENDER STATS ==========
+        function renderStats() {
+            const items = getInventory();
+            document.getElementById('totalItems').textContent = items.length;
+            document.getElementById('totalQuantity').textContent = items.reduce((sum, i) => sum + i.quantity, 0);
+            document.getElementById('lastUpdated').textContent = items.length > 0
+                ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '--';
+        }
+
+        // ========== CHART ==========
+        let chart = null;
+        let chartType = 'bar'; // 'bar' or 'pie'
+
+        const chartColors = [
+            '#38bdf8', '#818cf8', '#a78bfa', '#f472b6', '#fb923c',
+            '#34d399', '#facc15', '#f87171', '#22d3ee', '#c084fc'
+        ];
+
+        function renderChart() {
+            const items = getInventory();
+            const ctx = document.getElementById('inventoryChart').getContext('2d');
+
+            if (chart) chart.destroy();
+
+            const labels = items.map(i => i.name);
+            const data = items.map(i => i.quantity);
+            const colors = items.map((_, i) => chartColors[i % chartColors.length]);
+
+            if (items.length === 0) {
+                // Show empty chart
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['No Data'], datasets: [{ data: [0], backgroundColor: ['#334155'] }] },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+                return;
+            }
+
+            if (chartType === 'bar') {
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Quantity',
+                            data: data,
+                            backgroundColor: colors,
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94a3b8', font: { size: 12 } },
+                                grid: { color: 'rgba(255,255,255,0.04)' }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8', font: { size: 12 }, stepSize: 1 },
+                                grid: { color: 'rgba(255,255,255,0.04)' }
+                            }
+                        }
+                    }
+                });
+            } else {
+                chart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderColor: '#1e293b',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#94a3b8', padding: 15, font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function toggleChart() {
+            const btn = document.getElementById('toggleBtn');
+            if (chartType === 'bar') {
+                chartType = 'pie';
+                btn.textContent = 'Switch to Bar Chart';
+            } else {
+                chartType = 'bar';
+                btn.textContent = 'Switch to Pie Chart';
+            }
+            renderChart();
+        }
+
+        // ========== UTILITIES ==========
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== RENDER ALL ==========
+        function renderAll() {
+            renderList();
+            renderStats();
+            renderChart();
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('itemQty').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addItem();
+        });
+        document.getElementById('itemName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') document.getElementById('itemQty').focus();
+        });
+
+        // Initial render
+        renderAll();
+    </script>
+</body>
+</html>
